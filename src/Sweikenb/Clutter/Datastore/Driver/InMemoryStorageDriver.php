@@ -27,11 +27,54 @@ class InMemoryStorageDriver implements StorageDriverInterface
     private $storage;
 
     /**
+     * @var array
+     */
+    private $modes;
+
+    /**
      * InMemoryStorageDriver constructor.
      */
     public function __construct()
     {
         $this->storage = new \ArrayObject();
+        $this->modes = [
+            RepositoryQueryInterface::EQ          => function ($compareValue, $value) {
+                return ($compareValue == $value);
+            },
+            RepositoryQueryInterface::NEQ         => function ($compareValue, $value) {
+                return ($compareValue != $value);
+            },
+            RepositoryQueryInterface::IN          => function ($compareValue, $value) {
+                return in_array($compareValue, $value);
+            },
+            RepositoryQueryInterface::NOT_IN      => function ($compareValue, $value) {
+                return !in_array($compareValue, $value);
+            },
+            RepositoryQueryInterface::GT          => function ($compareValue, $value) {
+                return ($compareValue > $value);
+            },
+            RepositoryQueryInterface::GTE         => function ($compareValue, $value) {
+                return ($compareValue >= $value);
+            },
+            RepositoryQueryInterface::LT          => function ($compareValue, $value) {
+                return ($compareValue < $value);
+            },
+            RepositoryQueryInterface::LTE         => function ($compareValue, $value) {
+                return ($compareValue <= $value);
+            },
+            RepositoryQueryInterface::IS_NULL     => function ($compareValue) {
+                return (null === $compareValue);
+            },
+            RepositoryQueryInterface::NOT_NULL    => function ($compareValue) {
+                return (null !== $compareValue);
+            },
+            RepositoryQueryInterface::BETWEEN     => function ($compareValue, array $value) {
+                return (count($value) === 2 && $compareValue >= $value[0] && $compareValue <= $value[1]);
+            },
+            RepositoryQueryInterface::NOT_BETWEEN => function ($compareValue, $value) {
+                return (count($value) === 2 && ($compareValue < $value[0] || $compareValue > $value[1]));
+            }
+        ];
     }
 
     /**
@@ -78,7 +121,10 @@ class InMemoryStorageDriver implements StorageDriverInterface
                     continue;
                 }
                 $onlySkipped = false;
-                if ($this->processMode($mode, $value, $item[$field])) {
+                if (!isset($this->modes[$mode])) {
+                    throw UnsupportedConditionModeForDriverException::unsupportedConditionMode($mode, self::class);
+                }
+                if ($this->modes[$mode]($item[$field], $value)) {
                     $results[$id] = $item;
                 }
             }
@@ -128,57 +174,5 @@ class InMemoryStorageDriver implements StorageDriverInterface
             $this->storage->offsetUnset($entityId);
         }
         return true;
-    }
-
-    /**
-     * @param string $mode
-     * @param mixed  $value
-     * @param mixed  $compareValue
-     *
-     * @return bool
-     * @throw UnsupportedConditionModeForDriverException
-     */
-    private function processMode($mode, $value, $compareValue)
-    {
-        switch ($mode) {
-            case RepositoryQueryInterface::EQ:
-                return ($compareValue == $value);
-
-            case RepositoryQueryInterface::NEQ:
-                return ($compareValue != $value);
-
-            case RepositoryQueryInterface::IN:
-                return in_array($compareValue, $value);
-
-            case RepositoryQueryInterface::NOT_IN:
-                return !in_array($compareValue, $value);
-
-            case RepositoryQueryInterface::GT:
-                return ($compareValue > $value);
-
-            case RepositoryQueryInterface::GTE:
-                return ($compareValue >= $value);
-
-            case RepositoryQueryInterface::LT:
-                return ($compareValue < $value);
-
-            case RepositoryQueryInterface::LTE:
-                return ($compareValue <= $value);
-
-            case RepositoryQueryInterface::IS_NULL:
-                return (null === $compareValue);
-
-            case RepositoryQueryInterface::NOT_NULL:
-                return (null !== $compareValue);
-
-            case RepositoryQueryInterface::BETWEEN:
-                return (is_array($value) && count($value) === 2 && $compareValue >= $value[0] && $compareValue <= $value[1]);
-
-            case RepositoryQueryInterface::NOT_BETWEEN:
-                return !(is_array($value) && count($value) === 2 && $compareValue >= $value[0] && $compareValue <= $value[1]);
-
-            default:
-                throw UnsupportedConditionModeForDriverException::unsupportedConditionMode($mode, self::class);
-        }
     }
 }
