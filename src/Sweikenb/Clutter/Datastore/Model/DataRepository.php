@@ -11,10 +11,11 @@
 namespace Sweikenb\Clutter\Datastore\Model;
 
 use Sweikenb\Clutter\Datastore\API\DataModelInterface;
+use Sweikenb\Clutter\Datastore\API\ModelFactoryInterface;
 use Sweikenb\Clutter\Datastore\API\RepositoryInterface;
 use Sweikenb\Clutter\Datastore\API\RepositoryQueryInterface;
 use Sweikenb\Clutter\Datastore\API\RepositoryResultInterface;
-use Sweikenb\Clutter\Datastore\API\SimpleFactoryInterface;
+use Sweikenb\Clutter\Datastore\API\ResultFactoryInterface;
 use Sweikenb\Clutter\Datastore\API\StorageDriverInterface;
 
 /**
@@ -30,12 +31,12 @@ class DataRepository implements RepositoryInterface
     private $storageDriver;
 
     /**
-     * @var SimpleFactoryInterface
+     * @var ModelFactoryInterface
      */
     private $modelFactory;
 
     /**
-     * @var SimpleFactoryInterface
+     * @var ResultFactoryInterface
      */
     private $resultFactory;
 
@@ -43,13 +44,13 @@ class DataRepository implements RepositoryInterface
      * DataRepository constructor.
      *
      * @param StorageDriverInterface $storageDriver
-     * @param SimpleFactoryInterface $modelFactory
-     * @param SimpleFactoryInterface $resultFactory
+     * @param ModelFactoryInterface $modelFactory
+     * @param ResultFactoryInterface $resultFactory
      */
     public function __construct(
         StorageDriverInterface $storageDriver,
-        SimpleFactoryInterface $modelFactory,
-        SimpleFactoryInterface $resultFactory
+        ModelFactoryInterface $modelFactory,
+        ResultFactoryInterface $resultFactory
     ) {
         $this->storageDriver = $storageDriver;
         $this->modelFactory = $modelFactory;
@@ -92,22 +93,22 @@ class DataRepository implements RepositoryInterface
     }
 
     /**
-     * @param DataModelInterface $dataObject
+     * @param DataModelInterface $dataModel
      *
      * @return bool
      */
-    public function save(DataModelInterface $dataObject)
+    public function save(DataModelInterface $dataModel)
     {
-        return $this->storageDriver->saveEntity($dataObject->getId(), $dataObject->getIterator()->getArrayCopy());
+        return $this->storageDriver->saveEntity($dataModel->getId(), $dataModel->getArrayCopy());
     }
 
     /**
-     * @param DataModelInterface $dataObject
+     * @param DataModelInterface $dataModel
      *
      * @return bool
      */
-    public function delete(DataModelInterface $dataObject)
+    public function delete(DataModelInterface $dataModel)
     {
-        return $this->storageDriver->deleteEntity($dataObject->getId());
+        return $this->storageDriver->deleteEntity($dataModel->getId());
     }
 }

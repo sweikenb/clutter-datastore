@@ -33,4 +33,9 @@ interface DataModelInterface extends \Serializable, \IteratorAggregate, \ArrayAc
      * @return $this
      */
     public function setId($objectId);
+
+    /**
+     * @return array
+     */
+    public function getArrayCopy();
 }
