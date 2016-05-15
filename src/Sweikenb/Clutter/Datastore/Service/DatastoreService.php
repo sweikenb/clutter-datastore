@@ -10,10 +10,10 @@
 
 namespace Sweikenb\Clutter\Datastore\Service;
 
-
-use Sweikenb\Clutter\Datastore\API\ModelFactoryInterface;
-use Sweikenb\Clutter\Datastore\API\ResultFactoryInterface;
-use Sweikenb\Clutter\Datastore\API\StorageDriverInterface;
+use Sweikenb\Clutter\Datastore\API\DataModelInterface;
+use Sweikenb\Clutter\Datastore\API\RepositoryInterface;
+use Sweikenb\Clutter\Datastore\API\RepositoryQueryInterface;
+use Sweikenb\Clutter\Datastore\API\RepositoryResultInterface;
 
 /**
  * Class DatastoreService
@@ -23,34 +23,83 @@ use Sweikenb\Clutter\Datastore\API\StorageDriverInterface;
 class DatastoreService
 {
     /**
-     * @var StorageDriverInterface
+     * @var RepositoryInterface
      */
-    private $dataStorage;
-
-    /**
-     * @var ModelFactoryInterface
-     */
-    private $modelFactory;
-
-    /**
-     * @var ResultFactoryInterface
-     */
-    private $resultFactory;
+    private $repository;
 
     /**
      * DatastoreService constructor.
      *
-     * @param StorageDriverInterface $dataStorage
-     * @param ModelFactoryInterface  $modelFactory
-     * @param ResultFactoryInterface $resultFactory
+     * @param RepositoryInterface $repository
      */
-    public function __construct(StorageDriverInterface $dataStorage, ModelFactoryInterface $modelFactory, ResultFactoryInterface $resultFactory)
+    public function __construct(RepositoryInterface $repository)
     {
-        $this->dataStorage = $dataStorage;
-        $this->modelFactory = $modelFactory;
-        $this->resultFactory = $resultFactory;
+        $this->repository = $repository;
     }
 
+    /**
+     * @param string $objectId
+     *
+     * @return null|DataModelInterface
+     */
+    public function get($objectId)
+    {
+        return $this->repository->getObject($objectId);
+    }
 
+    /**
+     * @return RepositoryResultInterface
+     */
+    public function getAll()
+    {
+        return $this->repository->getList();
+    }
 
+    /**
+     * @return int
+     */
+    public function countAll()
+    {
+        return $this->repository->getCount();
+    }
+
+    /**
+     * @param DataModelInterface $dataModel
+     *
+     * @return bool
+     */
+    public function set(DataModelInterface $dataModel)
+    {
+        return $this->repository->save($dataModel);
+    }
+
+    /**
+     * @param DataModelInterface $dataModel
+     *
+     * @return bool
+     */
+    public function delete(DataModelInterface $dataModel)
+    {
+        return $this->repository->delete($dataModel);
+    }
+
+    /**
+     * @param RepositoryQueryInterface $query
+     *
+     * @return RepositoryResultInterface
+     */
+    public function filter(RepositoryQueryInterface $query)
+    {
+        return $this->repository->getList($query);
+    }
+
+    /**
+     * @param RepositoryQueryInterface $query
+     *
+     * @return int
+     */
+    public function filterCount(RepositoryQueryInterface $query)
+    {
+        return $this->repository->getCount($query);
+    }
 }

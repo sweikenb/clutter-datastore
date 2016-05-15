@@ -10,6 +10,8 @@
 
 namespace Sweikenb\Clutter\Datastore\API;
 
+use Sweikenb\Clutter\Datastore\Exceptions\UnsupportedConditionModeForDriverException;
+
 /**
  * Interface StorageDriverInterface
  *
@@ -28,6 +30,7 @@ interface StorageDriverInterface
      * @param RepositoryQueryInterface|null $query
      *
      * @return array[]
+     * @throws UnsupportedConditionModeForDriverException
      */
     public function getEntitiesByQuery(RepositoryQueryInterface $query = null);
 
@@ -35,6 +38,7 @@ interface StorageDriverInterface
      * @param RepositoryQueryInterface|null $query
      *
      * @return int
+     * @throws UnsupportedConditionModeForDriverException
      */
     public function getEntityCountByQuery(RepositoryQueryInterface $query = null);
 

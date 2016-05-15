@@ -12,6 +12,7 @@ namespace Sweikenb\Clutter\Datastore\Driver;
 
 use Sweikenb\Clutter\Datastore\API\RepositoryQueryInterface;
 use Sweikenb\Clutter\Datastore\API\StorageDriverInterface;
+use Sweikenb\Clutter\Datastore\Exceptions\UnsupportedConditionModeForDriverException;
 
 /**
  * Class InMemoryStorageDriver
@@ -50,11 +51,187 @@ class InMemoryStorageDriver implements StorageDriverInterface
      * @param RepositoryQueryInterface|null $query
      *
      * @return array[]
+     * @throws UnsupportedConditionModeForDriverException
      */
     public function getEntitiesByQuery(RepositoryQueryInterface $query = null)
     {
-        // TODO: Implement getEntitiesByQuery() method.
-        return [];
+        if (null === $query || empty($query->getConditions())) {
+            return $this->storage->getArrayCopy();
+        }
+
+        $filter = $this->storage->getArrayCopy();
+        $results = [];
+
+        foreach ($query->getConditions() as $field => $condition) {
+            $mode = $condition[0];
+            $value = $condition[1];
+
+            if (!empty($results)) {
+                unset($filter);
+                $filter = $results;
+                $results = [];
+            }
+
+            $onlySkipped = true;
+            switch ($mode) {
+                case RepositoryQueryInterface::EQ:
+                    foreach ($filter as $id => $item) {
+                        if (!isset($item[$field])) {
+                            continue;
+                        }
+                        $onlySkipped = false;
+                        if ($item[$field] == $value) {
+                            $results[$id] = $item;
+                        }
+                    }
+                    break;
+
+                case RepositoryQueryInterface::NEQ:
+                    foreach ($filter as $id => $item) {
+                        if (!isset($item[$field])) {
+                            continue;
+                        }
+                        $onlySkipped = false;
+                        if ($item[$field] != $value) {
+                            $results[$id] = $item;
+                        }
+                    }
+                    break;
+
+                case RepositoryQueryInterface::IN:
+                    foreach ($filter as $id => $item) {
+                        if (!isset($item[$field])) {
+                            continue;
+                        }
+                        $onlySkipped = false;
+                        if (in_array($item[$field], $value)) {
+                            $results[$id] = $item;
+                        }
+                    }
+                    break;
+
+                case RepositoryQueryInterface::NOT_IN:
+                    foreach ($filter as $id => $item) {
+                        if (!isset($item[$field])) {
+                            continue;
+                        }
+                        $onlySkipped = false;
+                        if (!in_array($item[$field], $value)) {
+                            $results[$id] = $item;
+                        }
+                    }
+                    break;
+
+                case RepositoryQueryInterface::GT:
+                    foreach ($filter as $id => $item) {
+                        if (!isset($item[$field])) {
+                            continue;
+                        }
+                        $onlySkipped = false;
+                        if ($item[$field] > $value) {
+                            $results[$id] = $item;
+                        }
+                    }
+                    break;
+
+                case RepositoryQueryInterface::GTE:
+                    foreach ($filter as $id => $item) {
+                        if (!isset($item[$field])) {
+                            continue;
+                        }
+                        $onlySkipped = false;
+                        if ($item[$field] >= $value) {
+                            $results[$id] = $item;
+                        }
+                    }
+                    break;
+
+                case RepositoryQueryInterface::LT:
+                    foreach ($filter as $id => $item) {
+                        if (!isset($item[$field])) {
+                            continue;
+                        }
+                        $onlySkipped = false;
+                        if ($item[$field] < $value) {
+                            $results[$id] = $item;
+                        }
+                    }
+                    break;
+
+                case RepositoryQueryInterface::LTE:
+                    foreach ($filter as $id => $item) {
+                        if (!isset($item[$field])) {
+                            continue;
+                        }
+                        $onlySkipped = false;
+                        if ($item[$field] <= $value) {
+                            $results[$id] = $item;
+                        }
+                    }
+                    break;
+
+                case RepositoryQueryInterface::IS_NULL:
+                    foreach ($filter as $id => $item) {
+                        if (!in_array($field, array_keys($item))) {
+                            continue;
+                        }
+                        $onlySkipped = false;
+                        if (null === $item[$field]) {
+                            $results[$id] = $item;
+                        }
+                    }
+                    break;
+
+                case RepositoryQueryInterface::NOT_NULL:
+                    foreach ($filter as $id => $item) {
+                        if (!in_array($field, array_keys($item))) {
+                            continue;
+                        }
+                        $onlySkipped = false;
+                        if (null !== $item[$field]) {
+                            $results[$id] = $item;
+                        }
+                    }
+                    break;
+
+                case RepositoryQueryInterface::BETWEEN:
+                    if (is_array($value) && count($value) === 2) {
+                        foreach ($filter as $id => $item) {
+                            if (!isset($item[$field])) {
+                                continue;
+                            }
+                            $onlySkipped = false;
+                            if ($item[$field] >= $value[0] && $item[$field] <= $value[1]) {
+                                $results[$id] = $item;
+                            }
+                        }
+                    }
+                    break;
+
+                case RepositoryQueryInterface::NOT_BETWEEN:
+                    if (is_array($value) && count($value) === 2) {
+                        foreach ($filter as $id => $item) {
+                            if (!isset($item[$field])) {
+                                continue;
+                            }
+                            $onlySkipped = false;
+                            if (!($item[$field] >= $value[0] && $item[$field] <= $value[1])) {
+                                $results[$id] = $item;
+                            }
+                        }
+                    }
+                    break;
+
+                default:
+                    throw UnsupportedConditionModeForDriverException::unsupportedConditionMode($mode, self::class);
+            }
+
+            if ($onlySkipped) {
+                $results = $filter;
+            }
+        }
+
+        return array_values($results);
     }
 
     /**
@@ -64,6 +241,10 @@ class InMemoryStorageDriver implements StorageDriverInterface
      */
     public function getEntityCountByQuery(RepositoryQueryInterface $query = null)
     {
+        if (null !== $query) {
+            $results = $this->getEntitiesByQuery($query);
+            return count($results);
+        }
         return $this->storage->count();
     }
 
