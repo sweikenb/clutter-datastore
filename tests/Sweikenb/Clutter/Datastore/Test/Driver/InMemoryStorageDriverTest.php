@@ -180,6 +180,91 @@ class InMemoryStorageDriverTest extends \PHPUnit_Framework_TestCase
     /**
      * @test
      */
+    public function filterBetweenNotbetween()
+    {
+        //-- Setup --
+        $memoryDriver = new InMemoryStorageDriver();
+        $entities = $this->saveEntitiesForFiltering($memoryDriver);
+
+        //-- BETWEEN --
+        $query = new DataQuery();
+        $query->field(self::FIELD_PRICE, DataQuery::BETWEEN, [20.1, 40.1]);
+        $query->field('unknown-field', DataQuery::BETWEEN, [20.1, 40.1]);
+        $this->assertEquals(
+            [
+                $entities[self::TEST_ID2],
+                $entities[self::TEST_ID3]
+            ],
+            $memoryDriver->getEntitiesByQuery($query)
+        );
+        $this->assertEquals(2, $memoryDriver->getEntityCountByQuery($query));
+
+        $query = new DataQuery();
+        $query->field(self::FIELD_PRICE, DataQuery::BETWEEN, [30.1, 40.1]);
+        $this->assertEquals(
+            [
+                $entities[self::TEST_ID3]
+            ],
+            $memoryDriver->getEntitiesByQuery($query)
+        );
+        $this->assertEquals(1, $memoryDriver->getEntityCountByQuery($query));
+
+        //-- NOT_BETWEEN --
+        $query = new DataQuery();
+        $query->field(self::FIELD_PRICE, DataQuery::NOT_BETWEEN, [20.1, 40.1]);
+        $query->field('unknown-field', DataQuery::NOT_BETWEEN, [20.1, 40.1]);
+        $this->assertEquals(
+            [
+                $entities[self::TEST_ID1],
+                $entities[self::TEST_ID4]
+            ],
+            $memoryDriver->getEntitiesByQuery($query)
+        );
+        $this->assertEquals(2, $memoryDriver->getEntityCountByQuery($query));
+
+        $query = new DataQuery();
+        $query->field(self::FIELD_PRICE, DataQuery::NOT_BETWEEN, [30.1, 50.1]);
+        $this->assertEquals(
+            [
+                $entities[self::TEST_ID1],
+                $entities[self::TEST_ID2]
+            ],
+            $memoryDriver->getEntitiesByQuery($query)
+        );
+        $this->assertEquals(2, $memoryDriver->getEntityCountByQuery($query));
+
+        //-- ALL --
+        $query = new DataQuery();
+        $query->field(self::FIELD_PRICE, DataQuery::BETWEEN, [0.0, 99.9]);
+        $this->assertEquals(
+            [
+                $entities[self::TEST_ID1],
+                $entities[self::TEST_ID2],
+                $entities[self::TEST_ID3],
+                $entities[self::TEST_ID4]
+            ],
+            $memoryDriver->getEntitiesByQuery($query)
+        );
+        $this->assertEquals(4, $memoryDriver->getEntityCountByQuery($query));
+
+        //-- UNKNOWN --
+        $query = new DataQuery();
+        $query->field(self::FIELD_PRICE, DataQuery::NOT_BETWEEN, [49.99, 99.99]);
+        $this->assertEquals(
+            [
+                $entities[self::TEST_ID1],
+                $entities[self::TEST_ID2],
+                $entities[self::TEST_ID3],
+                $entities[self::TEST_ID4]
+            ],
+            $memoryDriver->getEntitiesByQuery($query)
+        );
+        $this->assertEquals(4, $memoryDriver->getEntityCountByQuery($query));
+    }
+
+    /**
+     * @test
+     */
     public function filterInNin()
     {
         //-- Setup --
@@ -447,91 +532,6 @@ class InMemoryStorageDriverTest extends \PHPUnit_Framework_TestCase
     /**
      * @test
      */
-    public function filterBetweenNotbetween()
-    {
-        //-- Setup --
-        $memoryDriver = new InMemoryStorageDriver();
-        $entities = $this->saveEntitiesForFiltering($memoryDriver);
-
-        //-- BETWEEN --
-        $query = new DataQuery();
-        $query->field(self::FIELD_PRICE, DataQuery::BETWEEN, [20.1, 40.1]);
-        $query->field('unknown-field', DataQuery::BETWEEN, [20.1, 40.1]);
-        $this->assertEquals(
-            [
-                $entities[self::TEST_ID2],
-                $entities[self::TEST_ID3]
-            ],
-            $memoryDriver->getEntitiesByQuery($query)
-        );
-        $this->assertEquals(2, $memoryDriver->getEntityCountByQuery($query));
-
-        $query = new DataQuery();
-        $query->field(self::FIELD_PRICE, DataQuery::BETWEEN, [30.1, 40.1]);
-        $this->assertEquals(
-            [
-                $entities[self::TEST_ID3]
-            ],
-            $memoryDriver->getEntitiesByQuery($query)
-        );
-        $this->assertEquals(1, $memoryDriver->getEntityCountByQuery($query));
-
-        //-- NOT_BETWEEN --
-        $query = new DataQuery();
-        $query->field(self::FIELD_PRICE, DataQuery::NOT_BETWEEN, [20.1, 40.1]);
-        $query->field('unknown-field', DataQuery::NOT_BETWEEN, [20.1, 40.1]);
-        $this->assertEquals(
-            [
-                $entities[self::TEST_ID1],
-                $entities[self::TEST_ID4]
-            ],
-            $memoryDriver->getEntitiesByQuery($query)
-        );
-        $this->assertEquals(2, $memoryDriver->getEntityCountByQuery($query));
-
-        $query = new DataQuery();
-        $query->field(self::FIELD_PRICE, DataQuery::NOT_BETWEEN, [30.1, 50.1]);
-        $this->assertEquals(
-            [
-                $entities[self::TEST_ID1],
-                $entities[self::TEST_ID2]
-            ],
-            $memoryDriver->getEntitiesByQuery($query)
-        );
-        $this->assertEquals(2, $memoryDriver->getEntityCountByQuery($query));
-
-        //-- ALL --
-        $query = new DataQuery();
-        $query->field(self::FIELD_PRICE, DataQuery::BETWEEN, [0.0, 99.9]);
-        $this->assertEquals(
-            [
-                $entities[self::TEST_ID1],
-                $entities[self::TEST_ID2],
-                $entities[self::TEST_ID3],
-                $entities[self::TEST_ID4]
-            ],
-            $memoryDriver->getEntitiesByQuery($query)
-        );
-        $this->assertEquals(4, $memoryDriver->getEntityCountByQuery($query));
-
-        //-- UNKNOWN --
-        $query = new DataQuery();
-        $query->field(self::FIELD_PRICE, DataQuery::NOT_BETWEEN, [49.99, 99.99]);
-        $this->assertEquals(
-            [
-                $entities[self::TEST_ID1],
-                $entities[self::TEST_ID2],
-                $entities[self::TEST_ID3],
-                $entities[self::TEST_ID4]
-            ],
-            $memoryDriver->getEntitiesByQuery($query)
-        );
-        $this->assertEquals(4, $memoryDriver->getEntityCountByQuery($query));
-    }
-
-    /**
-     * @test
-     */
     public function unsupportedConditionMonde()
     {
         $unknownMode = 'unknown-condition-mode';
@@ -554,6 +554,7 @@ class InMemoryStorageDriverTest extends \PHPUnit_Framework_TestCase
             );
 
         $memoryDriver = new InMemoryStorageDriver();
+        $this->saveEntitiesForFiltering($memoryDriver);
         $memoryDriver->getEntitiesByQuery($queryMock);
     }
 }

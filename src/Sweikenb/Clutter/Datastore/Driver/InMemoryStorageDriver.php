@@ -73,157 +73,14 @@ class InMemoryStorageDriver implements StorageDriverInterface
             }
 
             $onlySkipped = true;
-            switch ($mode) {
-                case RepositoryQueryInterface::EQ:
-                    foreach ($filter as $id => $item) {
-                        if (!isset($item[$field])) {
-                            continue;
-                        }
-                        $onlySkipped = false;
-                        if ($item[$field] == $value) {
-                            $results[$id] = $item;
-                        }
-                    }
-                    break;
-
-                case RepositoryQueryInterface::NEQ:
-                    foreach ($filter as $id => $item) {
-                        if (!isset($item[$field])) {
-                            continue;
-                        }
-                        $onlySkipped = false;
-                        if ($item[$field] != $value) {
-                            $results[$id] = $item;
-                        }
-                    }
-                    break;
-
-                case RepositoryQueryInterface::IN:
-                    foreach ($filter as $id => $item) {
-                        if (!isset($item[$field])) {
-                            continue;
-                        }
-                        $onlySkipped = false;
-                        if (in_array($item[$field], $value)) {
-                            $results[$id] = $item;
-                        }
-                    }
-                    break;
-
-                case RepositoryQueryInterface::NOT_IN:
-                    foreach ($filter as $id => $item) {
-                        if (!isset($item[$field])) {
-                            continue;
-                        }
-                        $onlySkipped = false;
-                        if (!in_array($item[$field], $value)) {
-                            $results[$id] = $item;
-                        }
-                    }
-                    break;
-
-                case RepositoryQueryInterface::GT:
-                    foreach ($filter as $id => $item) {
-                        if (!isset($item[$field])) {
-                            continue;
-                        }
-                        $onlySkipped = false;
-                        if ($item[$field] > $value) {
-                            $results[$id] = $item;
-                        }
-                    }
-                    break;
-
-                case RepositoryQueryInterface::GTE:
-                    foreach ($filter as $id => $item) {
-                        if (!isset($item[$field])) {
-                            continue;
-                        }
-                        $onlySkipped = false;
-                        if ($item[$field] >= $value) {
-                            $results[$id] = $item;
-                        }
-                    }
-                    break;
-
-                case RepositoryQueryInterface::LT:
-                    foreach ($filter as $id => $item) {
-                        if (!isset($item[$field])) {
-                            continue;
-                        }
-                        $onlySkipped = false;
-                        if ($item[$field] < $value) {
-                            $results[$id] = $item;
-                        }
-                    }
-                    break;
-
-                case RepositoryQueryInterface::LTE:
-                    foreach ($filter as $id => $item) {
-                        if (!isset($item[$field])) {
-                            continue;
-                        }
-                        $onlySkipped = false;
-                        if ($item[$field] <= $value) {
-                            $results[$id] = $item;
-                        }
-                    }
-                    break;
-
-                case RepositoryQueryInterface::IS_NULL:
-                    foreach ($filter as $id => $item) {
-                        if (!in_array($field, array_keys($item))) {
-                            continue;
-                        }
-                        $onlySkipped = false;
-                        if (null === $item[$field]) {
-                            $results[$id] = $item;
-                        }
-                    }
-                    break;
-
-                case RepositoryQueryInterface::NOT_NULL:
-                    foreach ($filter as $id => $item) {
-                        if (!in_array($field, array_keys($item))) {
-                            continue;
-                        }
-                        $onlySkipped = false;
-                        if (null !== $item[$field]) {
-                            $results[$id] = $item;
-                        }
-                    }
-                    break;
-
-                case RepositoryQueryInterface::BETWEEN:
-                    if (is_array($value) && count($value) === 2) {
-                        foreach ($filter as $id => $item) {
-                            if (!isset($item[$field])) {
-                                continue;
-                            }
-                            $onlySkipped = false;
-                            if ($item[$field] >= $value[0] && $item[$field] <= $value[1]) {
-                                $results[$id] = $item;
-                            }
-                        }
-                    }
-                    break;
-
-                case RepositoryQueryInterface::NOT_BETWEEN:
-                    if (is_array($value) && count($value) === 2) {
-                        foreach ($filter as $id => $item) {
-                            if (!isset($item[$field])) {
-                                continue;
-                            }
-                            $onlySkipped = false;
-                            if (!($item[$field] >= $value[0] && $item[$field] <= $value[1])) {
-                                $results[$id] = $item;
-                            }
-                        }
-                    }
-                    break;
-
-                default:
-                    throw UnsupportedConditionModeForDriverException::unsupportedConditionMode($mode, self::class);
+            foreach ($filter as $id => $item) {
+                if (!in_array($field, array_keys($item))) {
+                    continue;
+                }
+                $onlySkipped = false;
+                if ($this->processMode($mode, $value, $item[$field])) {
+                    $results[$id] = $item;
+                }
             }
 
             if ($onlySkipped) {
@@ -271,5 +128,57 @@ class InMemoryStorageDriver implements StorageDriverInterface
             $this->storage->offsetUnset($entityId);
         }
         return true;
+    }
+
+    /**
+     * @param string $mode
+     * @param mixed  $value
+     * @param mixed  $compareValue
+     *
+     * @return bool
+     * @throw UnsupportedConditionModeForDriverException
+     */
+    private function processMode($mode, $value, $compareValue)
+    {
+        switch ($mode) {
+            case RepositoryQueryInterface::EQ:
+                return ($compareValue == $value);
+
+            case RepositoryQueryInterface::NEQ:
+                return ($compareValue != $value);
+
+            case RepositoryQueryInterface::IN:
+                return in_array($compareValue, $value);
+
+            case RepositoryQueryInterface::NOT_IN:
+                return !in_array($compareValue, $value);
+
+            case RepositoryQueryInterface::GT:
+                return ($compareValue > $value);
+
+            case RepositoryQueryInterface::GTE:
+                return ($compareValue >= $value);
+
+            case RepositoryQueryInterface::LT:
+                return ($compareValue < $value);
+
+            case RepositoryQueryInterface::LTE:
+                return ($compareValue <= $value);
+
+            case RepositoryQueryInterface::IS_NULL:
+                return (null === $compareValue);
+
+            case RepositoryQueryInterface::NOT_NULL:
+                return (null !== $compareValue);
+
+            case RepositoryQueryInterface::BETWEEN:
+                return (is_array($value) && count($value) === 2 && $compareValue >= $value[0] && $compareValue <= $value[1]);
+
+            case RepositoryQueryInterface::NOT_BETWEEN:
+                return !(is_array($value) && count($value) === 2 && $compareValue >= $value[0] && $compareValue <= $value[1]);
+
+            default:
+                throw UnsupportedConditionModeForDriverException::unsupportedConditionMode($mode, self::class);
+        }
     }
 }
