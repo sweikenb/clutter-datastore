@@ -69,10 +69,10 @@ class InMemoryStorageDriver implements StorageDriverInterface
                 return (null !== $compareValue);
             },
             RepositoryQueryInterface::BETWEEN     => function ($compareValue, array $value) {
-                return (static::isValidBetweenValue($value) && $compareValue >= $value[0] && $compareValue <= $value[1]);
+                return (self::isValidBetweenValue($value) && $compareValue >= $value[0] && $compareValue <= $value[1]);
             },
             RepositoryQueryInterface::NOT_BETWEEN => function ($compareValue, array $value) {
-                return (static::isValidBetweenValue($value) && ($compareValue < $value[0] || $compareValue > $value[1]));
+                return (self::isValidBetweenValue($value) && ($compareValue < $value[0] || $compareValue > $value[1]));
             }
         ];
     }
